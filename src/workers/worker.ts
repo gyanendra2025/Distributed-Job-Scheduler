@@ -1,4 +1,4 @@
-import { claimNextPending, markFailed, markSuccess, Job } from "../jobs/jobs";
+import { claimNextReady, markFailed, markSuccess, Job } from "../jobs/jobs";
 
 async function runJob(job: Job): Promise<unknown> {
   await sleep(500);
@@ -24,7 +24,7 @@ export async function runWorkerLoop(
   const pollInterval = opts.pollIntervalMs ?? 1000;
 
   while (!stopSignal.stopped) {
-    const job = await claimNextPending();
+    const job = await claimNextReady();
     if (!job) {
       opts.onIdle?.();
       await sleep(pollInterval);

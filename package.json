@@ -1,26 +1,29 @@
 {
-  "name": "distributed-job-schedular",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "djp-phase-01",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Phase 01 — Time-based scheduling",
   "scripts": {
-    "dev:api": "tsx watch src/server.ts",
-    "dev:worker": "tsx watch src/workerEntry/workerEntry.ts",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f postgres",
+    "db:migrate": "docker exec djp-postgres psql -U djp -d djp -f /dev/stdin < sql/002_add_run_at.sql",
+    "dev:api": "tsx watch src/serverEntry.ts",
+    "dev:scheduler": "tsx watch src/schedule/schedularEntry.ts",
+    "dev:worker": "tsx watch src/workerEntry.ts",
     "build": "tsc -p tsconfig.json",
-    "start:api": "node dist/server.js",
-    "start:worker": "node dist/workerEntry/workerEntry.js"
+    "start:api": "node dist/serverEntry.js",
+    "start:scheduler": "node dist/schedulerEntry.js",
+    "start:worker": "node dist/workerEntry.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "fastify": "^5.12.0",
-    "pg": "^8.23.0"
+    "fastify": "^4.28.1",
+    "pg": "^8.12.0"
   },
   "devDependencies": {
-    "@types/node": "^26.2.0",
-    "@types/pg": "^8.21.0",
-    "tsx": "^4.23.12",
-    "typescript": "^7.0.2"
+    "@types/node": "^20.14.10",
+    "@types/pg": "^8.11.6",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3"
   }
 }

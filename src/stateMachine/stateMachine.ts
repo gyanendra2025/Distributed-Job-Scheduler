@@ -1,8 +1,9 @@
 
-export type JobStatus = "PENDING" | "RUNNING" | "SUCCESS" | "FAILED";
+export type JobStatus = "PENDING" | "READY" | "RUNNING" | "SUCCESS" | "FAILED";
 
 const ALLOWED: Record<JobStatus, JobStatus[]> = {
-  PENDING: ["RUNNING"],
+  PENDING: ["READY"],
+  READY: ["RUNNING"],
   RUNNING: ["SUCCESS", "FAILED"],
   SUCCESS: [],
   FAILED: [],

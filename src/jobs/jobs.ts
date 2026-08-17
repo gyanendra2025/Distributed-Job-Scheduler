@@ -1,24 +1,34 @@
 import { pool } from "../database/db";
-import { JobStatus, canTransition, IllegalTransitionError } from "../stateMachine/stateMachine";
-
+import {
+  JobStatus,
+  canTransition,
+  IllegalTransitionError,
+} from "../stateMachine/stateMachine";
 
 export interface Job {
-    id: string;
-    type: string;
-    payload: unknown;
-    status: JobStatus;
-    result: unknown | null;
-    error: string | null;
-    created_at: Date;
-    updated_at: Date;
+  id: string;
+  type: string;
+  payload: unknown;
+  status: JobStatus;
+  run_at: Date;
+  result: unknown | null;
+  error: string | null;
+  created_at: Date;
+  updated_at: Date;
 }
 
-export async function createJob(type: string, payload: unknown): Promise<Job> {
-    const { rows } = await pool.query<Job>(
-        'INSERT INTO jobs (type, payload) VALUES ($1, $2) RETURNING *',
-        [type, payload ?? {}]
-    );
-    return rows[0];
+export async function createJob(
+  type: string,
+  payload: unknown,
+  runAt?: Date | string
+): Promise<Job> {
+  const { rows } = await pool.query<Job>(
+    `INSERT INTO jobs (type, payload, run_at)
+     VALUES ($1, $2, $3)
+     RETURNING *`,
+    [type, payload ?? {}, runAt ?? new Date()]
+  );
+  return rows[0];
 }
 
 export async function getJob(id: string): Promise<Job | null> {
@@ -29,13 +39,25 @@ export async function getJob(id: string): Promise<Job | null> {
   return rows[0] ?? null;
 }
 
-export async function claimNextPending(): Promise<Job | null> {
+// Scheduler calls this: PENDING jobs jinka run_at <= now → mark READY
+export async function markDueJobsReady(): Promise<number> {
+  const { rowCount } = await pool.query(
+    `UPDATE jobs
+        SET status = 'READY', updated_at = now()
+      WHERE status = 'PENDING'
+        AND run_at <= now()`
+  );
+  return rowCount ?? 0;
+}
+
+// Worker calls this: pick one READY job → RUNNING (atomic)
+export async function claimNextReady(): Promise<Job | null> {
   const { rows } = await pool.query<Job>(
     `UPDATE jobs
         SET status = 'RUNNING', updated_at = now()
       WHERE id = (
         SELECT id FROM jobs
-         WHERE status = 'PENDING'
+         WHERE status = 'READY'
          ORDER BY created_at
          LIMIT 1
       )
